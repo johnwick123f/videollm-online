@@ -1,8 +1,7 @@
 import torch, os
 from peft import LoraConfig, get_peft_model, PeftModel
-from transformers import AutoModelForCausalLM, Cache
+from transformers import AutoModelForCausalLM, Cache, BitsAndBytesConfig
 from transformers.utils import logging
-
 from .tokenization_live import build_live_tokenizer_and_update_config
 from .vision_live import build_live_vision
 
@@ -197,7 +196,9 @@ def build_live(
     torch_dtype: str | torch.dtype = 'auto',
     **kwargs
 ):
-    model = model_class.from_pretrained(llm_pretrained, config=config_class.from_pretrained(llm_pretrained, **kwargs), torch_dtype=torch_dtype, attn_implementation=attn_implementation)
+    quantization_config = BitsAndBytesConfig(load_in_4bit=True)
+    model = model_class.from_pretrained(llm_pretrained, config=config_class.from_pretrained(llm_pretrained, **kwargs), torch_dtype=torch_dtype, quantization_config=quantization_config)
+    print("INFO: Loaded llm model")
     tokenizer = build_live_tokenizer_and_update_config(llm_pretrained, model.config)
     if is_training:
         lora_config = LoraConfig(
