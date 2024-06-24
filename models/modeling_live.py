@@ -200,7 +200,7 @@ def build_live(
     quantization_config = BitsAndBytesConfig(load_in_4bit=True)
     config = config_class.from_pretrained(llm_pretrained, quantization_config=quantization_config, **kwargs)
     #weights = snapshot_download(llm_pretrained)
-    model = model_class.from_config(llm_pretrained, torch_dtype=torch_dtype, device_map='auto', quantization_config=quantization_config)
+    model = model_class.from_config(llm_pretrained, torch_dtype=torch_dtype, device_map='auto', quantization_config=quantization_config, trust_remote_code=True, )
     print("INFO: Loaded llm model")
     tokenizer = build_live_tokenizer_and_update_config(llm_pretrained, model.config)
     if is_training:
