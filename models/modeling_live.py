@@ -1,10 +1,11 @@
 import torch, os
 from peft import LoraConfig, get_peft_model, PeftModel
-from transformers import AutoModelForCausalLM, Cache, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, Cache, BitsAndBytesConfig, AutoConfig, AutoTokenizer
 from transformers.utils import logging
 from .tokenization_live import build_live_tokenizer_and_update_config
 from .vision_live import build_live_vision
-
+from huggingface_hub import snapshot_download
+from accelerate import init_empty_weights, load_checkpoint_and_dispatch
 logger = logging.get_logger(__name__)
 
 class LiveMixin(AutoModelForCausalLM):
@@ -197,7 +198,9 @@ def build_live(
     **kwargs
 ):
     quantization_config = BitsAndBytesConfig(load_in_4bit=True)
-    model = model_class.from_pretrained(llm_pretrained, config=config_class.from_pretrained(llm_pretrained, quantization_config=quantization_config, torch_dtype=torch.float16, device_map='auto', **kwargs), torch_dtype=torch_dtype, quantization_config=quantization_config)
+    config = config_class.from_pretrained(llm_pretrained, quantization_config=quantization_config, **kwargs)
+    #weights = snapshot_download(llm_pretrained)
+    model = model_class.from_config(llm_pretrained, torch_dtype=torch.float16, device_map='auto', quantization_config=quantization_config, torch_dtype=torch_dtype)
     print("INFO: Loaded llm model")
     tokenizer = build_live_tokenizer_and_update_config(llm_pretrained, model.config)
     if is_training:
